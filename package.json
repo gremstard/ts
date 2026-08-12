@@ -1,0 +1,28 @@
+{
+  "name": "ts-reader",
+  "version": "1.0.0",
+  "description": "Terminal reader mode — search, read, and watch YouTube, without leaving it.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gremstard/ts.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ts": "./bin/ts.js"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "commander": "^15.0.0",
+    "conf": "^15.1.0",
+    "jsdom": "^29.1.1",
+    "playwright": "^1.61.1",
+    "turndown": "^7.2.4"
+  }
+}
