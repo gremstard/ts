@@ -49,6 +49,43 @@ export function createYoutubeSession(query) {
   return { getWindow };
 }
 
+// Full (non-flat) extraction — --flat-playlist search results skip the real
+// per-video fetch, so their description can be truncated or missing. This
+// hits the actual watch page for complete, untruncated metadata.
+export function getVideoInfo(url) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("yt-dlp", [url, "--dump-json", "--no-warnings", "--skip-download"]);
+
+    let out = "";
+    let err = "";
+    proc.stdout.on("data", (chunk) => (out += chunk));
+    proc.stderr.on("data", (chunk) => (err += chunk));
+
+    proc.on("error", (e) => {
+      if (e.code === "ENOENT") {
+        reject(new Error("yt-dlp isn't installed. Install it with: brew install yt-dlp"));
+      } else {
+        reject(e);
+      }
+    });
+
+    proc.on("close", (code) => {
+      if (code !== 0 && !out.trim()) {
+        reject(new Error(`Fetching video info failed: ${err.trim() || `yt-dlp exited with code ${code}`}`));
+        return;
+      }
+      const v = JSON.parse(out.trim().split("\n")[0]);
+      resolve({
+        title: v.title,
+        id: v.id,
+        url: v.webpage_url || url,
+        channel: v.channel || v.uploader || "",
+        description: v.description || "",
+      });
+    });
+  });
+}
+
 function ytSearch(query, n) {
   return new Promise((resolve, reject) => {
     const proc = spawn("yt-dlp", [

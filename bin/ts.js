@@ -10,7 +10,7 @@ import { login } from "../src/login.js";
 import { getAiOverview } from "../src/ai.js";
 import { previewVideo } from "../src/preview.js";
 import { playAudio } from "../src/audio.js";
-import { createYoutubeSession, resolveDirectYoutubeUrl } from "../src/youtube.js";
+import { createYoutubeSession, resolveDirectYoutubeUrl, getVideoInfo } from "../src/youtube.js";
 import { startSpinner } from "../src/spinner.js";
 
 const program = new Command();
@@ -26,19 +26,43 @@ program
     }
   });
 
+const FIELD_ALIASES = {
+  title: "title",
+  desc: "description",
+  description: "description",
+  channel: "channel",
+  id: "id",
+};
+
 program
-  .command("yt <query-or-url-or-id>")
-  .description("search YouTube and preview picks inline, or play a URL/video ID directly — all in the terminal")
+  .command("yt <query-or-url-or-id> [field]")
+  .description(
+    "search YouTube and preview picks inline, or play a URL/video ID directly — all in the terminal. " +
+      "With a direct URL/ID, pass a field (title, desc, channel, id) to print it in full instead of playing"
+  )
   .option("-n, --num <count>", "number of results per page", "5")
   .option("-m, --audio", "play audio only — no ffmpeg, no video rendering, just sound")
-  .action(async (input, opts) => {
+  .action(async (input, field, opts) => {
     try {
       const play = opts.audio ? playAudio : previewVideo;
 
       const direct = resolveDirectYoutubeUrl(input);
       if (direct) {
+        if (field) {
+          const key = FIELD_ALIASES[field.toLowerCase()];
+          if (!key) {
+            throw new Error(`Unknown field "${field}" — expected one of: title, desc, channel, id`);
+          }
+          const info = await getVideoInfo(direct);
+          console.log(info[key] ?? "");
+          return;
+        }
         await play(direct);
         return;
+      }
+
+      if (field) {
+        throw new Error("A field lookup (title/desc/channel/id) needs a direct video URL or ID, not a search query.");
       }
 
       const session = createYoutubeSession(input);
